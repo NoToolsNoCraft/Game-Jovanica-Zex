@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e0e0e0;
+        }
+
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #timer, #score {
+            font-size: 24px;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+
+        #gameCanvas {
+            border: 2px solid #000;
+            background-color: #006400;
+        }
+
+        @media (max-width: 600px) {
+            button {
+                font-size: 12px;
+                padding: 5px;
+            }
+
+            #timer, #score {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="header">
+            <div id="timer">03:00</div>
+            <div id="score">0 - 0</div>
+            <button id="pauseBtn">Pause</button>
+            <button id="mainMenuBtn">Main Menu</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const canvasWidth = 700;  // Increased width for additional space
+        const canvasHeight = 400;
+
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        const playerRadius = 20;
+        const ballRadius = 15;
+        const goalWidth = 100;
+        const goalHeight = 40;  // Increased height for better visibility
+
+        let player1 = { x: 80, y: canvasHeight / 2, dx: 0, dy: 0 };
+        let player2 = { x: canvasWidth - 80, y: canvasHeight / 2, dx: 0, dy: 0 };
+        let ball = { x: canvasWidth / 2, y: canvasHeight / 2, dx: 2, dy: 2 };
+
+        let score = { player1: 0, player2: 0 };
+        let timer = 180;
+        let gamePaused = false;
+
+        function drawField() {
+            ctx.fillStyle = '#006400';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+
+            // Draw sidelines with additional space
+            ctx.strokeRect(40, 0, canvasWidth - 80, canvasHeight);
+
+            // Draw goals with nets
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(0, (canvasHeight - goalWidth) / 2, goalHeight, goalWidth);
+            ctx.strokeRect(canvasWidth - goalHeight, (canvasHeight - goalWidth) / 2, goalHeight, goalWidth);
+
+            // Draw goal nets
+            drawNet(0, (canvasHeight - goalWidth) / 2, goalHeight, goalWidth);
+            drawNet(canvasWidth - goalHeight, (canvasHeight - goalWidth) / 2, goalHeight, goalWidth);
+        }
+
+        function drawNet(x, y, width, height) {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= width; i += 10) {
+                ctx.beginPath();
+                ctx.moveTo(x + i, y);
+                ctx.lineTo(x + i, y + height);
+                ctx.stroke();
+            }
+            for (let j = 0; j <= height; j += 10) {
+                ctx.beginPath();
+                ctx.moveTo(x, y + j);
+                ctx.lineTo(x + width, y + j);
+                ctx.stroke();
+            }
+        }
+
+        function drawPlayer(player) {
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.ellipse(player.x, player.y, playerRadius, playerRadius * 1.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawBall() {
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updatePositions() {
+    if (!gamePaused) {
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        if (ball.y - ballRadius < 0 || ball.y + ballRadius > canvasHeight) {
+            ball.dy *= -1;
+        }
+
+        // Check for goal conditions
+        if (ball.x - ballRadius < goalHeight) {
+            if (ball.y > (canvasHeight - goalWidth) / 2 && ball.y < (canvasHeight + goalWidth) / 2) {
+                score.player2++;
+                resetBall();
+            } else {
+                ball.dx *= -1;
+            }
+        }
+
+        if (ball.x + ballRadius > canvasWidth - goalHeight) {
+            if (ball.y > (canvasHeight - goalWidth) / 2 && ball.y < (canvasHeight + goalWidth) / 2) {
+                score.player1++;
+                resetBall();
+            } else {
+                ball.dx *= -1;
+            }
+        }
+
+        document.getElementById('score').textContent = `${score.player1} - ${score.player2}`;
+    }
+}
+
+
+function resetBall() {
+    ball.x = canvasWidth / 2;
+    ball.y = canvasHeight / 2;
+    ball.dx = 2 * (Math.random() > 0.5 ? 1 : -1);
+    ball.dy = 2 * (Math.random() > 0.5 ? 1 : -1);
+}
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            drawField();
+            drawPlayer(player1);
+            drawPlayer(player2);
+            drawBall();
+            updatePositions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            gamePaused = !gamePaused;
+        });
+
+        document.getElementById('mainMenuBtn').addEventListener('click', () => {
+            window.location.href = 'index.html'; // Assuming index.html is the main menu
+        });
+
+        function startTimer() {
+            if (!gamePaused && timer > 0) {
+                timer--;
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                document.getElementById('timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else if (timer === 0) {
+                gamePaused = true;
+                alert('Game Over');
+            }
+        }
+
+        setInterval(startTimer, 1000);
+        gameLoop();
+    </script>
+</body>
+</html>
